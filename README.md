@@ -71,19 +71,19 @@ build so the same bridge can be tested independently.
    `dist` as the output directory. The included `vercel.json` keeps `/admin`
    working on direct navigation.
 2. Deploy the included `render.yaml` as a Render Blueprint from the same GitHub
-   repository. Set `BAR_TIKTOK_USERNAME` to the account username,
-   `BAR_ADMIN_TOKEN` to a long random secret, and `BAR_ALLOWED_ORIGINS` to the
-   exact Vercel origin, for example `https://your-project.vercel.app`. Add
-   custom frontend origins as comma-separated full origins. Do not include
-   paths or trailing slashes.
+   repository. Set `BAR_TIKTOK_USERNAME` to the account username and
+   `BAR_ALLOWED_ORIGINS` to the exact Vercel origin, for example
+   `https://your-project.vercel.app`. Add custom frontend origins as
+   comma-separated full origins. Do not include paths or trailing slashes.
 3. In Vercel, set `VITE_LIVE_BRIDGE_URL` to the Render service URL, for example
    `https://bar-live-bridge.onrender.com`, then redeploy the frontend.
 
 The bridge starts when Render starts the service. Render's free web services
 can spin down when idle; opening the LIVE scene establishes a WebSocket
 connection and wakes the service if needed. Configure Render's environment
-variables in its dashboard; enter the admin token in `/admin` to send settings.
-Do not commit `.env.local` or service credentials.
+variables in its dashboard. The `/admin` page has no login; anyone who can
+access the site can change shared bridge settings. Do not commit `.env.local`
+or service credentials.
 
 ## Gift mappings
 

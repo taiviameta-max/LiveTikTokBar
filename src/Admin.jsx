@@ -20,10 +20,9 @@ const LED_IMAGE_HEIGHT = 320;
 const MAX_LED_IMAGE_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_LED_IMAGE_DATA_URL_LENGTH = 300_000;
 
-function createBridgeConfig(settings, token) {
+function createBridgeConfig(settings) {
   return {
     type: 'admin-config',
-    token,
     settings: {
       giftMappings: settings.giftMappings,
       sceneSettings: {
@@ -44,8 +43,6 @@ function Admin() {
   ));
   const [status, setStatus] = useState('Đang nối với bridge…');
   const [error, setError] = useState('');
-  const [adminToken, setAdminToken] = useState('');
-  const adminTokenRef = useRef('');
   const bridgeSocket = useRef(null);
   const savedSettings = useRef(settings);
 
@@ -74,7 +71,7 @@ function Admin() {
           return;
         }
         reconnectDelay = 1000;
-        socket.send(JSON.stringify(createBridgeConfig(savedSettings.current, adminTokenRef.current)));
+        socket.send(JSON.stringify(createBridgeConfig(savedSettings.current)));
       });
       socket.addEventListener('message', (message) => {
         let payload;
@@ -135,7 +132,7 @@ function Admin() {
       savedSettings.current = normalizedSettings;
       setError('');
       if (socketIsOpen()) {
-        bridgeSocket.current.send(JSON.stringify(createBridgeConfig(normalizedSettings, adminTokenRef.current)));
+        bridgeSocket.current.send(JSON.stringify(createBridgeConfig(normalizedSettings)));
       }
       setStatus(socketIsOpen()
         ? 'Đã lưu và gửi cấu hình tới bridge.'
@@ -265,26 +262,6 @@ function Admin() {
             Mở cảnh LIVE
           </a>
         </header>
-
-        <section className="rounded-2xl border border-[#27e8ff]/20 bg-[#27e8ff]/[0.04] p-5">
-          <label className="block text-sm font-semibold" htmlFor="bridge-admin-token">
-            Mật khẩu quản trị bridge
-          </label>
-          <p className="mt-1 text-xs text-white/55">
-            Nhập BAR_ADMIN_TOKEN đã cấu hình riêng trên Render. Token chỉ được giữ trong tab này.
-          </p>
-          <input
-            autoComplete="current-password"
-            className="mt-3 w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-[#27e8ff]/60"
-            id="bridge-admin-token"
-            onChange={(event) => {
-              adminTokenRef.current = event.target.value;
-              setAdminToken(event.target.value);
-            }}
-            type="password"
-            value={adminToken}
-          />
-        </section>
 
         <details className="group rounded-2xl border border-[#ff3df2]/25 bg-[#ff3df2]/[0.04]">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 [&::-webkit-details-marker]:hidden">

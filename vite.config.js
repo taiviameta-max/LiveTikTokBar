@@ -13,7 +13,6 @@ export default defineConfig(({ mode }) => {
       tiktokLiveBridge({
         username: env.BAR_TIKTOK_USERNAME,
         allowedOrigins: env.BAR_ALLOWED_ORIGINS,
-        adminToken: env.BAR_ADMIN_TOKEN,
         giftMappings: {
           ZOOM: env.BAR_GIFT_ZOOM,
           FLY_ZOOM: env.BAR_GIFT_FLY_ZOOM ?? 'TikTok',

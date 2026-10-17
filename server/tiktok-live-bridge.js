@@ -4,7 +4,6 @@ import {
   UserOfflineError,
   WebcastEvent,
 } from 'tiktok-live-connector';
-import { timingSafeEqual } from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 
 const SOCKET_PATH = '/live-events';
@@ -101,20 +100,10 @@ function isAllowedOrigin(request, origin, allowedOrigins) {
   }
 }
 
-function isAuthorizedAdmin(request, candidate, adminToken) {
-  if (!adminToken) return isLoopbackAddress(request.socket.remoteAddress);
-  if (typeof candidate !== 'string') return false;
-  const candidateBuffer = Buffer.from(candidate);
-  const expectedBuffer = Buffer.from(adminToken);
-  return candidateBuffer.length === expectedBuffer.length
-    && timingSafeEqual(candidateBuffer, expectedBuffer);
-}
-
 export function tiktokLiveBridge({
   username = '',
   giftMappings = {},
   allowedOrigins = '',
-  adminToken = '',
 } = {}) {
   const cleanUsername = username.trim().replace(/^@/, '');
   const mappedGifts = createGiftActionMap(giftMappings);
@@ -229,7 +218,7 @@ export function tiktokLiveBridge({
         }
       });
 
-      webSocketServer.on('connection', (client, request) => {
+      webSocketServer.on('connection', (client) => {
         clients.add(client);
         client.send(JSON.stringify({ type: 'status', status }));
         client.on('message', (rawMessage) => {
@@ -251,13 +240,6 @@ export function tiktokLiveBridge({
             return;
           }
           if (payload?.type !== 'admin-config') return;
-          if (!isAuthorizedAdmin(request, payload.token, adminToken)) {
-            client.send(JSON.stringify({
-              type: 'admin-config-error',
-              message: 'Admin token is missing or invalid.',
-            }));
-            return;
-          }
 
           const receivedMappings = payload.settings?.giftMappings;
           if (!receivedMappings || typeof receivedMappings !== 'object' || Array.isArray(receivedMappings)) {
