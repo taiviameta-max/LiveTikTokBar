@@ -10,5 +10,7 @@ services:
         value: 22
       - key: BAR_TIKTOK_USERNAME
         sync: false
+      - key: BAR_TIKTOK_SIGN_API_KEY
+        sync: false
       - key: BAR_ALLOWED_ORIGINS
         sync: false

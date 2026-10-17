@@ -75,6 +75,8 @@ build so the same bridge can be tested independently.
    `BAR_ALLOWED_ORIGINS` to the exact Vercel origin, for example
    `https://your-project.vercel.app`. Add custom frontend origins as
    comma-separated full origins. Do not include paths or trailing slashes.
+   If the default TikTok signature service rate-limits connections, set
+   `BAR_TIKTOK_SIGN_API_KEY` to an Euler Stream API key in Render's environment.
 3. In Vercel, set `VITE_LIVE_BRIDGE_URL` to the Render service URL, for example
    `https://bar-live-bridge.onrender.com`, then redeploy the frontend.
 
@@ -83,7 +85,7 @@ can spin down when idle; opening the LIVE scene establishes a WebSocket
 connection and wakes the service if needed. Configure Render's environment
 variables in its dashboard. The `/admin` page has no login; anyone who can
 access the site can change shared bridge settings. Do not commit `.env.local`
-or service credentials.
+or signing API keys.
 
 ## Gift mappings
 

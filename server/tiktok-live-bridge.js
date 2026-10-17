@@ -1,5 +1,6 @@
 import {
   ControlEvent,
+  SignatureRateLimitError,
   TikTokLiveConnection,
   UserOfflineError,
   WebcastEvent,
@@ -355,6 +356,7 @@ export function tiktokLiveBridge({
         updateStatus('connecting');
 
         const activeConnection = new TikTokLiveConnection(cleanUsername, {
+          signApiKey: process.env.BAR_TIKTOK_SIGN_API_KEY || undefined,
           processInitialData: false,
           enableExtendedGiftInfo: false,
         });
@@ -371,7 +373,11 @@ export function tiktokLiveBridge({
         });
         activeConnection.on(ControlEvent.ERROR, ({ info, exception } = {}) => {
           const isOffline = exception instanceof UserOfflineError;
-          if (!isOffline) console.error('TikTok LIVE connector error:', info, exception);
+          const isRateLimited = exception instanceof SignatureRateLimitError;
+          if (!isOffline && !isRateLimited) console.error('TikTok LIVE connector error:', info, exception);
+          if (isRateLimited) {
+            console.warn('TikTok signature service rate limit reached; the bridge will wait before retrying.');
+          }
           if (connection === activeConnection) updateStatus(isOffline ? 'offline' : 'error');
         });
         activeConnection.on(WebcastEvent.STREAM_END, () => {
@@ -447,12 +453,19 @@ export function tiktokLiveBridge({
           if (!stopped && connection === activeConnection) updateStatus('connected');
         } catch (error) {
           const isOffline = error instanceof UserOfflineError;
-          if (!isOffline) {
+          const isRateLimited = error instanceof SignatureRateLimitError;
+          if (!isOffline && !isRateLimited) {
             console.error(`Unable to connect to TikTok LIVE @${cleanUsername}:`, error);
           }
           if (connection === activeConnection) updateStatus(isOffline ? 'offline' : 'error');
           clearTimeout(reconnectTimer);
-          reconnectTimer = setTimeout(connectToLive, RECONNECT_DELAY_MS);
+          const retryAfter = isRateLimited && Number.isFinite(error.retryAfter)
+            ? Math.max(RECONNECT_DELAY_MS, error.retryAfter)
+            : RECONNECT_DELAY_MS;
+          if (isRateLimited) {
+            console.warn(`TikTok signature limit for @${cleanUsername}; retrying in ${Math.ceil(retryAfter / 60_000)} minutes.`);
+          }
+          reconnectTimer = setTimeout(connectToLive, retryAfter);
         } finally {
           connecting = false;
         }
