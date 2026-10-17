@@ -20,9 +20,11 @@ its service.
 6. Capture the Chrome window in OBS, then send the OBS Virtual Camera to
    TikTok LIVE Studio.
 
-Open `/admin` on the same local app to change spotlight/laser visibility, light
-sweep speed, like-to-zoom behavior, and gift-name/comment mappings. Save changes
-to store them in this browser and apply them to connected LIVE scenes. Gift
+Open `/admin` on the same local app to choose the TikTok LIVE username, change
+spotlight/laser visibility, light sweep speed, like-to-zoom behavior, and
+gift-name/comment mappings. Selecting another LIVE username switches the
+shared bridge account; the selected username is remembered in that browser.
+Save changes to store them in this browser and apply them to connected LIVE scenes. Gift
 mappings and comment/like settings are also sent to the local bridge; connected
 LIVE scenes receive them even when they are in another browser profile. If the
 bridge is unavailable, it will receive the saved mappings when Admin reconnects.
@@ -84,8 +86,8 @@ The bridge starts when Render starts the service. Render's free web services
 can spin down when idle; opening the LIVE scene establishes a WebSocket
 connection and wakes the service if needed. Configure Render's environment
 variables in its dashboard. The `/admin` page has no login; anyone who can
-access the site can change shared bridge settings. Do not commit `.env.local`
-or signing API keys.
+access it can change the shared LIVE account and bridge settings. Do not commit
+`.env.local` or signing API keys.
 
 ## Gift mappings
 

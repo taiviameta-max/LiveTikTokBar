@@ -113,10 +113,12 @@ export function tiktokLiveBridge({
   function configureBridge(server) {
       const clients = new Set();
       const webSocketServer = new WebSocketServer({ noServer: true });
-      let status = cleanUsername ? 'connecting' : 'not-configured';
+      let liveUsername = cleanUsername;
+      let status = liveUsername ? 'connecting' : 'not-configured';
       let sceneSettings;
       let connection;
       let reconnectTimer;
+      let signatureRateLimitUntil = 0;
       let stopped = false;
       let connecting = false;
 
@@ -242,6 +244,21 @@ export function tiktokLiveBridge({
           }
           if (payload?.type !== 'admin-config') return;
 
+          let nextLiveUsername;
+          if (payload.settings?.liveUsername !== undefined) {
+            const requestedUsername = typeof payload.settings.liveUsername === 'string'
+              ? payload.settings.liveUsername.trim().replace(/^@/, '')
+              : '';
+            if (!/^[A-Za-z0-9._]{1,24}$/.test(requestedUsername)) {
+              client.send(JSON.stringify({
+                type: 'admin-config-error',
+                message: 'TikTok username must be 1–24 letters, numbers, dots, or underscores.',
+              }));
+              return;
+            }
+            nextLiveUsername = requestedUsername;
+          }
+
           const receivedMappings = payload.settings?.giftMappings;
           if (!receivedMappings || typeof receivedMappings !== 'object' || Array.isArray(receivedMappings)) {
             client.send(JSON.stringify({
@@ -317,7 +334,30 @@ export function tiktokLiveBridge({
             sceneSettings = validatedSceneSettings;
             broadcast({ type: 'scene-settings', settings: sceneSettings });
           }
-          client.send(JSON.stringify({ type: 'admin-config-saved' }));
+          if (nextLiveUsername !== undefined && nextLiveUsername !== liveUsername) {
+            liveUsername = nextLiveUsername;
+            clearTimeout(reconnectTimer);
+            if (connection) {
+              const previousConnection = connection;
+              connection = null;
+              connecting = false;
+              previousConnection.disconnect().catch((error) => {
+                console.error('Unable to switch TikTok LIVE accounts:', error);
+              });
+            }
+            if (liveUsername) {
+              const retryDelay = signatureRateLimitUntil - Date.now();
+              if (retryDelay > 0) {
+                updateStatus('error');
+                reconnectTimer = setTimeout(connectToLive, retryDelay);
+              } else {
+                connectToLive();
+              }
+            } else {
+              updateStatus('not-configured');
+            }
+          }
+          client.send(JSON.stringify({ type: 'admin-config-saved', liveUsername }));
         });
         client.on('close', () => clients.delete(client));
         client.on('error', (error) => {
@@ -351,11 +391,12 @@ export function tiktokLiveBridge({
       server.httpServer?.on('upgrade', onUpgrade);
 
       async function connectToLive() {
-        if (stopped || connecting || !cleanUsername) return;
+        if (stopped || connecting || !liveUsername) return;
         connecting = true;
         updateStatus('connecting');
 
-        const activeConnection = new TikTokLiveConnection(cleanUsername, {
+        const activeUsername = liveUsername;
+        const activeConnection = new TikTokLiveConnection(activeUsername, {
           signApiKey: process.env.BAR_TIKTOK_SIGN_API_KEY || undefined,
           processInitialData: false,
           enableExtendedGiftInfo: false,
@@ -384,6 +425,7 @@ export function tiktokLiveBridge({
           if (connection === activeConnection) updateStatus('offline');
         });
         activeConnection.on(WebcastEvent.MEMBER, (data) => {
+          if (connection !== activeConnection) return;
           const user = data.user;
           const userId = user?.uniqueId || user?.nickname;
           if (!userId) return;
@@ -398,6 +440,7 @@ export function tiktokLiveBridge({
           });
         });
         activeConnection.on(WebcastEvent.CHAT, (data) => {
+          if (connection !== activeConnection) return;
           const user = data.user;
           const userId = user?.uniqueId || user?.nickname;
           if (!userId || typeof data.comment !== 'string') return;
@@ -409,11 +452,12 @@ export function tiktokLiveBridge({
               displayName: user.nickname || user.uniqueId || userId,
               avatarUrl: getTikTokAvatarUrl(user),
               text: data.comment,
-              isHost: userId.toLocaleLowerCase() === cleanUsername.toLocaleLowerCase(),
+              isHost: userId.toLocaleLowerCase() === liveUsername.toLocaleLowerCase(),
             },
           });
         });
         activeConnection.on(WebcastEvent.LIKE, (data) => {
+          if (connection !== activeConnection) return;
           const user = data.user;
           const userId = user?.uniqueId || user?.nickname;
           if (!userId) return;
@@ -429,6 +473,7 @@ export function tiktokLiveBridge({
           });
         });
         activeConnection.on(WebcastEvent.GIFT, (data) => {
+          if (connection !== activeConnection) return;
           if (data.giftDetails?.giftType === 1 && !data.repeatEnd) return;
           const user = data.user;
           const userId = user?.uniqueId || user?.nickname;
@@ -452,10 +497,11 @@ export function tiktokLiveBridge({
           await activeConnection.connect();
           if (!stopped && connection === activeConnection) updateStatus('connected');
         } catch (error) {
+          if (stopped || connection !== activeConnection) return;
           const isOffline = error instanceof UserOfflineError;
           const isRateLimited = error instanceof SignatureRateLimitError;
           if (!isOffline && !isRateLimited) {
-            console.error(`Unable to connect to TikTok LIVE @${cleanUsername}:`, error);
+            console.error(`Unable to connect to TikTok LIVE @${activeUsername}:`, error);
           }
           if (connection === activeConnection) updateStatus(isOffline ? 'offline' : 'error');
           clearTimeout(reconnectTimer);
@@ -463,15 +509,16 @@ export function tiktokLiveBridge({
             ? Math.max(RECONNECT_DELAY_MS, error.retryAfter)
             : RECONNECT_DELAY_MS;
           if (isRateLimited) {
-            console.warn(`TikTok signature limit for @${cleanUsername}; retrying in ${Math.ceil(retryAfter / 60_000)} minutes.`);
+            signatureRateLimitUntil = Date.now() + retryAfter;
+            console.warn(`TikTok signature limit for @${activeUsername}; retrying in ${Math.ceil(retryAfter / 60_000)} minutes.`);
           }
           reconnectTimer = setTimeout(connectToLive, retryAfter);
         } finally {
-          connecting = false;
+          if (connection === activeConnection) connecting = false;
         }
       }
 
-      if (cleanUsername) {
+      if (liveUsername) {
         connectToLive();
       } else {
         server.config.logger.info('TikTok LIVE bridge idle. Set BAR_TIKTOK_USERNAME to connect.');

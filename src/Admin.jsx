@@ -19,11 +19,22 @@ const LED_IMAGE_WIDTH = 768;
 const LED_IMAGE_HEIGHT = 320;
 const MAX_LED_IMAGE_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_LED_IMAGE_DATA_URL_LENGTH = 300_000;
+const LIVE_USERNAME_KEY = 'bar-live-tiktok-username';
 
-function createBridgeConfig(settings) {
+function loadLiveUsername() {
+  try {
+    return window.localStorage.getItem(LIVE_USERNAME_KEY) || '';
+  } catch (storageError) {
+    console.error('Unable to load the saved TikTok username:', storageError);
+    return '';
+  }
+}
+
+function createBridgeConfig(settings, liveUsername) {
   return {
     type: 'admin-config',
     settings: {
+      liveUsername: liveUsername || undefined,
       giftMappings: settings.giftMappings,
       sceneSettings: {
         zoomOnLike: settings.zoomOnLike,
@@ -36,6 +47,7 @@ function createBridgeConfig(settings) {
 
 function Admin() {
   const [settings, setSettings] = useState(loadLiveSettings);
+  const [liveUsername, setLiveUsername] = useState(loadLiveUsername);
   const [observedGifts, setObservedGifts] = useState(loadGiftCatalog);
   const [giftSelection, setGiftSelection] = useState({});
   const [commentMappingOpen, setCommentMappingOpen] = useState(() => Object.fromEntries(
@@ -45,6 +57,7 @@ function Admin() {
   const [error, setError] = useState('');
   const bridgeSocket = useRef(null);
   const savedSettings = useRef(settings);
+  const savedLiveUsername = useRef(liveUsername);
 
   useEffect(() => {
     try {
@@ -71,7 +84,7 @@ function Admin() {
           return;
         }
         reconnectDelay = 1000;
-        socket.send(JSON.stringify(createBridgeConfig(savedSettings.current)));
+        socket.send(JSON.stringify(createBridgeConfig(savedSettings.current, savedLiveUsername.current)));
       });
       socket.addEventListener('message', (message) => {
         let payload;
@@ -82,7 +95,19 @@ function Admin() {
           return;
         }
         if (payload.type === 'admin-config-saved') {
-          setError('');
+          let usernamePersistenceFailed = false;
+          if (typeof payload.liveUsername === 'string') {
+            savedLiveUsername.current = payload.liveUsername;
+            setLiveUsername(payload.liveUsername);
+            try {
+              window.localStorage.setItem(LIVE_USERNAME_KEY, payload.liveUsername);
+            } catch (storageError) {
+              console.error('Unable to save the active TikTok username:', storageError);
+              setError('Bridge đã nhận username nhưng trình duyệt không lưu được username này.');
+              usernamePersistenceFailed = true;
+            }
+          }
+          if (!usernamePersistenceFailed) setError('');
           setStatus('Bridge đã nhận cấu hình');
         } else if (payload.type === 'admin-config-error') {
           setStatus('Bridge chưa nhận cấu hình');
@@ -132,7 +157,10 @@ function Admin() {
       savedSettings.current = normalizedSettings;
       setError('');
       if (socketIsOpen()) {
-        bridgeSocket.current.send(JSON.stringify(createBridgeConfig(normalizedSettings)));
+        bridgeSocket.current.send(JSON.stringify(createBridgeConfig(
+          normalizedSettings,
+          savedLiveUsername.current,
+        )));
       }
       setStatus(socketIsOpen()
         ? 'Đã lưu và gửi cấu hình tới bridge.'
@@ -145,6 +173,35 @@ function Admin() {
 
   function socketIsOpen() {
     return bridgeSocket.current?.readyState === WebSocket.OPEN;
+  }
+
+  function connectLiveAccount() {
+    const normalizedUsername = liveUsername.trim().replace(/^@/, '');
+    if (!/^[A-Za-z0-9._]{1,24}$/.test(normalizedUsername)) {
+      setError('Nhập username TikTok hợp lệ (1–24 chữ cái, số, dấu chấm hoặc gạch dưới).');
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(LIVE_USERNAME_KEY, normalizedUsername);
+    } catch (storageError) {
+      console.error('Unable to save the TikTok username:', storageError);
+      setError('Không lưu được username trong trình duyệt này.');
+      return;
+    }
+
+    savedLiveUsername.current = normalizedUsername;
+    setLiveUsername(normalizedUsername);
+    setError('');
+    if (!socketIsOpen()) {
+      setStatus('Đã lưu username; sẽ gửi khi bridge kết nối lại.');
+      return;
+    }
+    bridgeSocket.current.send(JSON.stringify(createBridgeConfig(
+      savedSettings.current,
+      normalizedUsername,
+    )));
+    setStatus(`Đang yêu cầu bridge kết nối @${normalizedUsername}…`);
   }
 
   function resetSettings() {
@@ -262,6 +319,35 @@ function Admin() {
             Mở cảnh LIVE
           </a>
         </header>
+
+        <section className="rounded-2xl border border-[#27e8ff]/20 bg-[#27e8ff]/[0.04] p-5">
+          <h2 className="text-lg font-bold">Tài khoản TikTok LIVE</h2>
+          <p className="mt-1 text-sm text-white/55">
+            Nhập username đang phát LIVE. Bridge sẽ ngắt tài khoản hiện tại và kết nối tài khoản này.
+          </p>
+          <p className="mt-1 text-xs text-amber-100/65">
+            Tài khoản được chọn áp dụng chung cho tất cả người đang xem website.
+          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <input
+              autoComplete="off"
+              className="min-w-0 flex-1 rounded-xl border border-white/15 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-[#27e8ff]/60"
+              onChange={(event) => setLiveUsername(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') connectLiveAccount();
+              }}
+              placeholder="username TikTok, không cần @"
+              value={liveUsername}
+            />
+            <button
+              className="rounded-xl border border-[#27e8ff]/40 bg-[#27e8ff]/10 px-5 py-3 text-sm font-bold text-[#9bfaff] transition hover:bg-[#27e8ff]/20"
+              onClick={connectLiveAccount}
+              type="button"
+            >
+              Kết nối tài khoản
+            </button>
+          </div>
+        </section>
 
         <details className="group rounded-2xl border border-[#ff3df2]/25 bg-[#ff3df2]/[0.04]">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 [&::-webkit-details-marker]:hidden">
