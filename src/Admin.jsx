@@ -466,7 +466,7 @@ function Admin() {
               />
             </label>
             <div className="mt-5 rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-white/65">
-              Lệnh comment được gán trong từng hiệu ứng bên dưới; comment phải khớp chính xác, không phân biệt hoa/thường. Nhập nhiều từ khóa cách nhau bằng dấu chấm phẩy. Nếu trùng từ khóa, hiệu ứng đứng trước trong danh sách sẽ được ưu tiên. “hey” hoặc bình luận có chữ “nhảy” vẫn kích hoạt điệu nhảy nếu chưa được gán lệnh riêng.
+              Lệnh comment được gán trong từng hiệu ứng bên dưới; từ khóa có thể nằm trong câu, không phân biệt hoa/thường và bỏ qua dấu câu. Nhập nhiều từ khóa cách nhau bằng dấu chấm phẩy. Nếu trùng từ khóa, cụm dài hơn được ưu tiên. “hey” hoặc bình luận có chữ “nhảy” vẫn kích hoạt điệu nhảy nếu chưa được gán lệnh riêng.
             </div>
           </article>
         </section>
