@@ -1,8 +1,10 @@
 export const LIVE_SETTINGS_KEY = 'bar-live-settings';
+export const LIVE_SETTINGS_MIGRATION_KEY = 'bar-live-settings-migration';
 export const GIFT_CATALOG_KEY = 'bar-live-gift-catalog';
 export const ADMIN_TEST_EVENT_KEY = 'bar-live-admin-test-event';
 export const MAX_GIFT_CATALOG_ITEMS = 200;
 export const MAX_LIVE_HINTS = 8;
+const GIFT_MAPPINGS_MIGRATION = 'gift-mappings-v1';
 
 export const SUGGESTED_GIFTS = [
   { name: 'Rose', aliases: ['Hoa hồng'] },
@@ -58,7 +60,7 @@ export const DEFAULT_LIVE_SETTINGS = {
     FLY_ZOOM: 'Finger Heart',
     SANTO: 'Heart Me',
     BREAKDANCE: 'TikTok',
-    'ĐI VÒNG': '',
+    'ĐI VÒNG': 'Love you so much',
     'PHÁO HOA': 'Glow Stick',
     'ĐỔI NHÂN VẬT': 'Ice Cream Cone',
   },
@@ -188,7 +190,23 @@ export function getLiveHints(settings) {
 export function loadLiveSettings() {
   try {
     const serialized = window.localStorage.getItem(LIVE_SETTINGS_KEY);
-    return serialized ? normalizeLiveSettings(JSON.parse(serialized)) : DEFAULT_LIVE_SETTINGS;
+    if (!serialized) {
+      window.localStorage.setItem(LIVE_SETTINGS_MIGRATION_KEY, GIFT_MAPPINGS_MIGRATION);
+      return DEFAULT_LIVE_SETTINGS;
+    }
+
+    const storedSettings = JSON.parse(serialized);
+    if (window.localStorage.getItem(LIVE_SETTINGS_MIGRATION_KEY) !== GIFT_MAPPINGS_MIGRATION) {
+      const migratedSettings = normalizeLiveSettings({
+        ...storedSettings,
+        giftMappings: DEFAULT_LIVE_SETTINGS.giftMappings,
+      });
+      window.localStorage.setItem(LIVE_SETTINGS_KEY, JSON.stringify(migratedSettings));
+      window.localStorage.setItem(LIVE_SETTINGS_MIGRATION_KEY, GIFT_MAPPINGS_MIGRATION);
+      return migratedSettings;
+    }
+
+    return normalizeLiveSettings(storedSettings);
   } catch (error) {
     console.error('Unable to load Bar Live settings from local storage:', error);
     return DEFAULT_LIVE_SETTINGS;
