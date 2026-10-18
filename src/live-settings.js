@@ -55,12 +55,12 @@ export const DEFAULT_LIVE_SETTINGS = {
   },
   giftMappings: {
     ZOOM: 'Rose;Hoa hồng',
-    FLY_ZOOM: 'TikTok',
-    SANTO: '',
-    BREAKDANCE: '',
+    FLY_ZOOM: 'Finger Heart',
+    SANTO: 'Heart Me',
+    BREAKDANCE: 'TikTok',
     'ĐI VÒNG': '',
-    'PHÁO HOA': '',
-    'ĐỔI NHÂN VẬT': '',
+    'PHÁO HOA': 'Glow Stick',
+    'ĐỔI NHÂN VẬT': 'Ice Cream Cone',
   },
 };
 

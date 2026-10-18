@@ -59,13 +59,14 @@ Likes zoom the camera in on the viewer who sent them. TikTok may batch like
 events or omit them for busy streams. Viewer avatars are shown as circles beside
 character names. Avatar images are fetched through a proxy restricted to TikTok
 image CDN hosts; if an event has no usable avatar or the image cannot be
-fetched, the label shows the viewer's initial instead. The
-bridge does not request the extended room gift catalog because that connector
-feature requires Eulerstream's paid signing service. If TikTok omits a gift name
-from an event, the overlay shows its gift ID instead and name-based gift
-mappings cannot match that event. The admin suggestions are not an official or
-complete TikTok catalog; obtaining the extended room gift catalog requires
-Eulerstream's paid signing service, which this app does not use.
+fetched, the label shows the viewer's initial instead. The bridge does not fetch
+TikTok's extended room gift catalog because that connector feature requires
+Eulerstream's paid signing service. When TikTok omits gift names, known IDs are
+used as fallbacks: Rose (5655), TikTok (5269), Heart Me (7934), Love you so
+much (15231), Finger Heart (5487), Ice Cream Cone (5827), and Glow Stick
+(6788). Other unknown gift IDs cannot match name-based mappings.
+The admin suggestions are examples only, not an official or complete TikTok
+catalog.
 
 ## Deploy the app with TikTok LIVE
 

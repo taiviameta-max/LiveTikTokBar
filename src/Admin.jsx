@@ -281,10 +281,6 @@ function Admin() {
       .flatMap((value) => value.split(';').map((name) => name.trim()).filter(Boolean)),
   ])].sort((a, b) => a.localeCompare(b));
   const suggestedGiftNames = SUGGESTED_GIFTS.flatMap(({ name, aliases }) => [name, ...aliases]);
-  const configuredGiftNames = Object.values(settings.giftMappings)
-    .flatMap((value) => value.split(';').map((name) => name.trim()).filter(Boolean));
-  const isObservedGift = (gift) => observedGifts.some((name) => name.toLocaleLowerCase() === gift.toLocaleLowerCase());
-  const isSuggestedGift = (gift) => suggestedGiftNames.some((name) => name.toLocaleLowerCase() === gift.toLocaleLowerCase());
   const automaticHints = getAutomaticLiveHints(settings);
 
   function addGiftToEffect(effectId) {
@@ -662,6 +658,18 @@ function Admin() {
                     ))}
                   </select>
                   <button
+                    className="shrink-0 rounded-lg border border-[#ff3df2]/30 px-3 py-2 text-sm font-semibold text-[#ffb5f0] transition hover:bg-[#ff3df2]/10 disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={!giftSelection[id]}
+                    onClick={() => testSceneEvent({
+                      type: 'gift',
+                      giftName: giftSelection[id],
+                      action: id,
+                    })}
+                    type="button"
+                  >
+                    Test
+                  </button>
+                  <button
                     className="shrink-0 rounded-lg border border-[#27e8ff]/30 px-3 py-2 text-sm font-semibold text-[#9bfaff] transition hover:bg-[#27e8ff]/10 disabled:cursor-not-allowed disabled:opacity-40"
                     disabled={!giftSelection[id]}
                     onClick={() => addGiftToEffect(id)}
@@ -671,39 +679,6 @@ function Admin() {
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-bold">Danh sách quà</h2>
-              <p className="mt-1 text-sm text-white/55">
-                Đã nhận khi live: {observedGifts.length} · Gợi ý: {SUGGESTED_GIFTS.length}
-              </p>
-            </div>
-          </div>
-          <p className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-3 text-sm text-amber-100/80">
-            TikTok không gửi danh mục đầy đủ trong event thường. Danh sách dưới đây gồm quà thấy thực tế khi bridge nhận được tên và một số gợi ý; quà gợi ý có thể không có trong LIVE của mày.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {observedGifts.map((giftName) => (
-              <span className="rounded-full border border-[#27e8ff]/30 bg-[#27e8ff]/10 px-3 py-1 text-sm text-[#b8fbff]" key={`seen-${giftName}`}>
-                {giftName} <span className="text-[10px] text-white/45">đã nhận</span>
-              </span>
-            ))}
-            {suggestedGiftNames.filter((gift) => !isObservedGift(gift)).map((giftName) => (
-              <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-sm text-white/75" key={`suggested-${giftName}`}>
-                {giftName} <span className="text-[10px] text-white/45">gợi ý</span>
-              </span>
-            ))}
-            {configuredGiftNames
-              .filter((gift) => !isObservedGift(gift) && !isSuggestedGift(gift))
-              .map((giftName) => (
-              <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-sm text-white/75" key={`configured-${giftName}`}>
-                {giftName} <span className="text-[10px] text-white/45">đã gán</span>
-              </span>
             ))}
           </div>
         </section>

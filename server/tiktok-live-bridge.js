@@ -14,6 +14,15 @@ const RECONNECT_DELAY_MS = 15_000;
 const MAX_CONFIG_MESSAGE_BYTES = 16 * 1024;
 const MAX_LIVE_HINTS = 8;
 const GIFT_ACTIONS = ['ZOOM', 'FLY_ZOOM', 'SANTO', 'BREAKDANCE', 'ĐI VÒNG', 'PHÁO HOA', 'ĐỔI NHÂN VẬT'];
+const KNOWN_TIKTOK_GIFT_NAMES = new Map([
+  ['5655', 'Rose'],
+  ['5269', 'TikTok'],
+  ['15231', 'Love you so much'],
+  ['7934', 'Heart Me'],
+  ['5487', 'Finger Heart'],
+  ['5827', 'Ice Cream Cone'],
+  ['6788', 'Glow Stick'],
+]);
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
 const MAX_AVATAR_REDIRECTS = 3;
 const AVATAR_HOST_SUFFIXES = [
@@ -33,6 +42,12 @@ const DEFAULT_SCENE_SETTINGS = {
 
 export function normalizeGiftName(name) {
   return typeof name === 'string' ? name.trim().toLocaleLowerCase() : '';
+}
+
+export function getTikTokCommentText(data) {
+  if (typeof data?.content === 'string') return data.content;
+  if (typeof data?.comment === 'string') return data.comment;
+  return null;
 }
 
 export function createGiftActionMap(giftMappings) {
@@ -407,7 +422,6 @@ export function tiktokLiveBridge({
         const activeConnection = new TikTokLiveConnection(activeUsername, {
           signApiKey: process.env.BAR_TIKTOK_SIGN_API_KEY || undefined,
           processInitialData: false,
-          enableExtendedGiftInfo: false,
         });
         connection = activeConnection;
 
@@ -451,7 +465,16 @@ export function tiktokLiveBridge({
           if (connection !== activeConnection) return;
           const user = data.user;
           const userId = user?.uniqueId || user?.nickname;
-          if (!userId || typeof data.comment !== 'string') return;
+          const comment = getTikTokCommentText(data);
+          if (!userId || comment === null) {
+            console.warn('TikTok LIVE chat event is missing a user ID or comment text.', {
+              hasUserId: Boolean(userId),
+              contentType: typeof data.content,
+              commentType: typeof data.comment,
+            });
+            return;
+          }
+          console.info('TikTok LIVE chat event received.');
           broadcast({
             type: 'event',
             event: {
@@ -459,7 +482,7 @@ export function tiktokLiveBridge({
               user: userId,
               displayName: user.nickname || user.uniqueId || userId,
               avatarUrl: getTikTokAvatarUrl(user),
-              text: data.comment,
+              text: comment,
               isHost: userId.toLocaleLowerCase() === liveUsername.toLocaleLowerCase(),
             },
           });
@@ -486,8 +509,14 @@ export function tiktokLiveBridge({
           const user = data.user;
           const userId = user?.uniqueId || user?.nickname;
           if (!userId) return;
-          const giftName = data.giftDetails?.giftName || `Quà #${data.giftId}`;
+          const giftId = String(data.giftId ?? data.giftDetails?.id ?? '');
+          const giftName = data.giftDetails?.giftName
+            || data.extendedGiftInfo?.name
+            || data.extendedGiftInfo?.giftName
+            || KNOWN_TIKTOK_GIFT_NAMES.get(giftId)
+            || `Quà #${giftId || 'unknown'}`;
           const normalizedGiftName = normalizeGiftName(giftName);
+          console.info(`TikTok LIVE gift received: id=${giftId || 'unknown'} name=${giftName}`);
           broadcast({
             type: 'event',
             event: {
@@ -495,6 +524,7 @@ export function tiktokLiveBridge({
               user: userId,
               displayName: user.nickname || user.uniqueId || userId,
               avatarUrl: getTikTokAvatarUrl(user),
+              giftId,
               giftName,
               action: mappedGifts.get(normalizedGiftName) || null,
             },

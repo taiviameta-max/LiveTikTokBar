@@ -30,7 +30,7 @@ const MAX_ACTIVE_DANCE_VIDEOS = 4;
 const VIDEO_PLAYBACK_RATE = 1;
 const DEMO_MODE_ENABLED = import.meta.env.VITE_ENABLE_DEMO === 'true';
 const DJ_VIDEO_NAME = 'vd10.mp4';
-const DJ_ZOOM_INTERVAL = 30;
+const DJ_ZOOM_INTERVAL = 40;
 const DJ_ZOOM_DURATION = 3.5;
 const FLY_ZOOM_DURATION = 4.5;
 const LIKE_ZOOM_COOLDOWN = 3;
@@ -1167,11 +1167,11 @@ function App() {
         ledContext.shadowColor = '#ff3df2';
         ledContext.shadowBlur = 26;
         ledContext.fillStyle = '#fff';
-        ledContext.fillText(sceneSettings.ledTitle, ledCanvas.width / 2, 115);
+        ledContext.fillText(sceneSettings.ledTitle, ledCanvas.width / 2, 75);
         ledContext.shadowBlur = 0;
         ledContext.font = 'bold 18px system-ui,sans-serif';
         ledContext.fillStyle = '#9bfaff';
-        ledContext.fillText(sceneSettings.ledSubtitle, ledCanvas.width / 2, 172, ledCanvas.width - 48);
+        ledContext.fillText(sceneSettings.ledSubtitle, ledCanvas.width / 2, 132, ledCanvas.width - 48);
         for (let i = 0; i < 34; i += 1) {
           const height = 12 + Math.abs(Math.sin(time * 5 + i * 0.6)) * 45;
           const hue = (time * 48 + i * 12) % 360;
