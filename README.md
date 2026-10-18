@@ -45,7 +45,9 @@ settings in local storage.
 The bridge shows its connection status in the lower-left of the scene. If the
 account is offline when the app starts, it retries periodically. Comments are
 shown in the feed; each effect can be assigned comment keywords from its card
-in `/admin`, with multiple exact phrases separated by semicolons. By default,
+in `/admin`, with multiple words or phrases separated by semicolons. Matching
+ignores case and punctuation and works when the keyword appears within a
+comment. By default,
 `hey hey` changes the commenter's character. If no configured keyword matches,
 `hey` or a comment containing `nhảy` makes that viewer's character dance.
 Recognized mapped gifts trigger their configured effect.

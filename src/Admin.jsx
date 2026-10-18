@@ -601,7 +601,7 @@ function Admin() {
         <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
           <div className="mb-4">
             <h2 className="text-lg font-bold">Gán quà tặng</h2>
-            <p className="mt-1 text-sm text-white/55">Gán quà hoặc mở “Gán comment” trong từng hiệu ứng để đặt lệnh riêng.</p>
+            <p className="mt-1 text-sm text-white/55">Gán quà hoặc mở “Gán comment” trong từng hiệu ứng. Từ khóa có thể nằm trong câu comment; không phân biệt hoa thường và dấu câu.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {GIFT_EFFECTS.map(({ id, label }) => (
@@ -642,7 +642,7 @@ function Admin() {
                           ...settings.commentMappings,
                           [id]: event.target.value,
                         })}
-                        placeholder="Để trống nếu không gán · nhiều từ khóa cách nhau bằng dấu ;"
+                        placeholder="Ví dụ: hi; đổi nhân vật · nhiều từ khóa cách nhau bằng dấu ;"
                         type="text"
                         value={settings.commentMappings[id]}
                       />

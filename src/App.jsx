@@ -6,6 +6,7 @@ import {
   ADMIN_TEST_EVENT_KEY,
   GIFT_EFFECTS,
   LIVE_SETTINGS_KEY,
+  getCommentEffect,
   getLiveHints,
   loadLiveSettings,
   normalizeLiveSettings,
@@ -409,20 +410,9 @@ function App() {
       }
     });
 
-    const commentTriggers = new Map();
-
     function applySceneSettings(nextSettings) {
       sceneSettings = normalizeLiveSettings(nextSettings);
       liveSettings.current = sceneSettings;
-      commentTriggers.clear();
-      GIFT_EFFECTS.forEach(({ id }) => {
-        sceneSettings.commentMappings[id].split(';').forEach((keyword) => {
-          const normalizedKeyword = keyword.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
-          if (normalizedKeyword && !commentTriggers.has(normalizedKeyword)) {
-            commentTriggers.set(normalizedKeyword, id);
-          }
-        });
-      });
       djMonitor.userData.updateTitle(sceneSettings.djName);
       mcMonitor.userData.updateTitle(sceneSettings.mcName);
       if (ledImageSource !== sceneSettings.ledImage) {
@@ -1009,7 +999,7 @@ function App() {
         const text = typeof event.text === 'string' ? event.text : '';
         const normalized = text.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
         if (event.isHost !== true) {
-          const matchedEffect = commentTriggers.get(normalized);
+          const matchedEffect = getCommentEffect(text, sceneSettings.commentMappings);
           if (matchedEffect) {
             const user = getUser(event.user, event.demo === true, displayName, avatarUrl);
             giftActions[matchedEffect](user);

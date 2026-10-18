@@ -149,6 +149,36 @@ export function getAutomaticLiveHints(settings) {
   return hints;
 }
 
+function normalizeCommentText(text) {
+  return typeof text === 'string'
+    ? text.normalize('NFKC')
+      .toLocaleLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim()
+      .replace(/\s+/g, ' ')
+    : '';
+}
+
+export function getCommentEffect(text, commentMappings) {
+  const normalizedText = normalizeCommentText(text);
+  if (!normalizedText) return null;
+
+  const matches = [];
+  GIFT_EFFECTS.forEach(({ id }) => {
+    const mapping = commentMappings?.[id];
+    if (typeof mapping !== 'string') return;
+    mapping.split(';').forEach((keyword) => {
+      const normalizedKeyword = normalizeCommentText(keyword);
+      if (normalizedKeyword && ` ${normalizedText} `.includes(` ${normalizedKeyword} `)) {
+        matches.push({ effect: id, length: normalizedKeyword.length });
+      }
+    });
+  });
+
+  matches.sort((left, right) => right.length - left.length);
+  return matches[0]?.effect ?? null;
+}
+
 export function getLiveHints(settings) {
   return [...getAutomaticLiveHints(settings), ...settings.liveHints]
     .filter((hint) => hint.trigger || hint.effect)
