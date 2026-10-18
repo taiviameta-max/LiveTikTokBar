@@ -6,6 +6,7 @@ import {
   WebcastEvent,
 } from 'tiktok-live-connector';
 import { WebSocketServer, WebSocket } from 'ws';
+import { DEFAULT_LIVE_SETTINGS, getAutomaticLiveHints } from '../src/live-settings.js';
 
 const SOCKET_PATH = '/live-events';
 const AVATAR_PATH = '/live-avatar';
@@ -22,6 +23,13 @@ const AVATAR_HOST_SUFFIXES = [
   '.byteimg.com',
   '.ibytedtos.com',
 ];
+const DEFAULT_SCENE_SETTINGS = {
+  zoomOnLike: DEFAULT_LIVE_SETTINGS.zoomOnLike,
+  commentMappings: { ...DEFAULT_LIVE_SETTINGS.commentMappings },
+  giftMappings: { ...DEFAULT_LIVE_SETTINGS.giftMappings },
+  liveHints: getAutomaticLiveHints(DEFAULT_LIVE_SETTINGS)
+    .map(({ trigger, effect }) => ({ trigger, effect })),
+};
 
 export function normalizeGiftName(name) {
   return typeof name === 'string' ? name.trim().toLocaleLowerCase() : '';
@@ -115,7 +123,7 @@ export function tiktokLiveBridge({
       const webSocketServer = new WebSocketServer({ noServer: true });
       let liveUsername = cleanUsername;
       let status = liveUsername ? 'connecting' : 'not-configured';
-      let sceneSettings;
+      let sceneSettings = DEFAULT_SCENE_SETTINGS;
       let connection;
       let reconnectTimer;
       let signatureRateLimitUntil = 0;

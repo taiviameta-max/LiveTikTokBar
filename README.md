@@ -50,7 +50,11 @@ ignores case and punctuation and works when the keyword appears within a
 comment. By default,
 `hey hey` changes the commenter's character. If no configured keyword matches,
 `hey` or a comment containing `nhảy` makes that viewer's character dance.
-Recognized mapped gifts trigger their configured effect.
+The bridge starts with the default `hey hey` comment mapping and Rose gift
+mapping, so these work before the Admin page has reconnected after a restart.
+Saving custom mappings in Admin sends them to the bridge; reopening Admin sends
+the browser's saved mappings again after a bridge restart. Recognized mapped
+gifts trigger their configured effect.
 Likes zoom the camera in on the viewer who sent them. TikTok may batch like
 events or omit them for busy streams. Viewer avatars are shown as circles beside
 character names. Avatar images are fetched through a proxy restricted to TikTok

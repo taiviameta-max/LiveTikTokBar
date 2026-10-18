@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
         username: env.BAR_TIKTOK_USERNAME,
         allowedOrigins: env.BAR_ALLOWED_ORIGINS,
         giftMappings: {
-          ZOOM: env.BAR_GIFT_ZOOM,
+          ZOOM: env.BAR_GIFT_ZOOM ?? 'Rose;Hoa hồng',
           FLY_ZOOM: env.BAR_GIFT_FLY_ZOOM ?? 'TikTok',
           SANTO: env.BAR_GIFT_SANTO,
           BREAKDANCE: env.BAR_GIFT_BREAKDANCE,
